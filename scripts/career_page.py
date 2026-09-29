@@ -213,19 +213,20 @@ def build(pack, pack_path):
         anchor = e(root["employment_id"])
         nav.append(f'<a href="#{anchor}"><span class="mono">{e(root["start"][:4])}</span>{e(root["employer"])}</a>')
         from career_state import uncertainty
-        titles = "".join(f'<li><span class="mono">{e(span(x["start"], x["end"]))}</span>{e(x["title"])}'
-                         + (f'<p class="open">{e(uncertainty(x))}</p>' if uncertainty(x) else '') + '</li>' for x in reversed(chain))
         scope = (chain[-1].get("scope") or {})
         scope_rows = "".join(f'<div><dt>{e(k.replace("_", " "))}</dt><dd>{e(v)}</dd></div>'
                              for k, v in (("remit", scope.get("remit")), ("team", scope.get("team_size")),
                                           ("reports", scope.get("direct_reports")), ("budget", scope.get("budget")),
                                           ("organisation", scope.get("org_size")), ("geography", scope.get("geography"))) if v)
+        # Scope describes the latest title, so it sits under that title rather than after the whole progression.
+        titles = "".join(f'<li><span class="mono">{e(span(x["start"], x["end"]))}</span>{e(x["title"])}'
+                         + (f'<p class="open">{e(uncertainty(x))}</p>' if uncertainty(x) else '')
+                         + (f'<dl class="scope">{scope_rows}</dl>' if scope_rows and x is chain[-1] else '') + '</li>' for x in reversed(chain))
         blocks.append(
             f'<section class="role" id="{anchor}">'
             f'<div class="rail"><span class="dot"></span></div>'
             f'<div class="role-body"><div class="role-head"><div class="mono span">{e(span(root["start"], end))}</div>'
             f'<h2>{e(root["employer"])}</h2><ul class="titles">{titles}</ul>'
-            + (f'<dl class="scope">{scope_rows}</dl>' if scope_rows else "")
             + (f'<p class="loc mono">{e(chain[-1].get("location") or "")}</p>' if chain[-1].get("location") else "")
             + '</div>'
             + "".join(atom_html(a) for a in entries)
@@ -324,7 +325,7 @@ main {{ min-width:0; overflow-wrap:anywhere; }}
 .role-head h2 {{ font-size:1.9rem; line-height:1.15; }}
 .role-head .span {{ color:var(--accent); margin-bottom:0.3rem; }}
 .titles {{ list-style:none; margin:0.5rem 0 0; padding:0; display:flex; flex-direction:column; gap:0.15rem; font-size:0.95rem; color:var(--ink); }}
-.titles li {{ display:grid; grid-template-columns:11rem 1fr; gap:0.6rem; }}
+.titles li {{ display:grid; grid-template-columns:11rem 1fr; gap:0.6rem; }} .titles li > p.open, .titles li > dl.scope {{ grid-column:1 / -1; }}
 .scope {{ margin:0.9rem 0 0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr)); gap:0.5rem 1.4rem; font-size:0.88rem; }}
 .scope dt {{ font-family:var(--mono); font-size:0.66rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }}
 .scope dd {{ margin:0; color:var(--text); }}
